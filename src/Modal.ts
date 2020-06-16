@@ -34,8 +34,8 @@ export class ModalFooter {
      (keydown.esc)="closeOnEscape ? close() : 0"
      [ngClass]="{ in: isOpened, fade: isOpened }"
      [ngStyle]="{ display: isOpened ? 'block' : 'none' }"
-     (click)="closeOnOutsideClick ? close() : 0">
-    <div [class]="'modal-dialog ' + modalClass" (click)="preventClosing($event)">
+     (click)="closeOnOutsideClick ? close($event, true) : 0">
+    <div [class]="'modal-dialog ' + modalClass" #modalBody>
         <div class="modal-content" tabindex="0" *ngIf="isOpened">
             <div class="modal-header">
                 <button *ngIf="!hideCloseButton" type="button" class="close" data-dismiss="modal" [attr.aria-label]="cancelButtonLabel || 'Close'" (click)="close()"><span aria-hidden="true">&times;</span></button>
@@ -111,6 +111,9 @@ export class Modal {
     @ViewChild("modalRoot")
     public modalRoot: ElementRef;
 
+    @ViewChild("modalBody")
+    public modalBody: ElementRef;
+
     private backdropElement: HTMLElement;
 
     // -------------------------------------------------------------------------
@@ -146,12 +149,19 @@ export class Modal {
         document.body.className += " modal-open";
     }
 
-    close(...args: any[]) {
+    close(event: MouseEvent = null, isClickedAnywhere: boolean = false) {
         if (!this.isOpened)
             return;
 
         this.isOpened = false;
-        this.onClose.emit(args);
+
+        if (isClickedAnywhere && event) {
+            let target = event.target as HTMLElement;
+            if (target.contains(this.modalBody.nativeElement)) {
+                return;
+            }
+        }
+        this.onClose.emit();
         document.body.removeChild(this.backdropElement);
         document.body.className = document.body.className.replace(/modal-open\b/, "");
     }
